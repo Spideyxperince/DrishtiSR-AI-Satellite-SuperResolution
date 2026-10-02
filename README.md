@@ -136,6 +136,7 @@ npm run dev
 ```bash
 cd backend
 pip install uvicorn
+.\venv\Scripts\Activate.ps1
 python -m uvicorn app.main:app --reload
 ```
 
