@@ -127,6 +127,7 @@ Open **two terminals** from the repository root. The frontend and backend should
 
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
@@ -134,6 +135,7 @@ npm run dev
 
 ```bash
 cd backend
+pip install uvicorn
 python -m uvicorn app.main:app --reload
 ```
 
