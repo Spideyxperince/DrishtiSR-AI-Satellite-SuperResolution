@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-bg-page: var(--bg-page);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-secondary: var(--bg-surface-secondary);
+  --color-bg-surface-hover: var(--bg-surface-hover);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-focus: var(--border-focus);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-primary-hover: var(--accent-primary-hover);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+}
+
+@layer base {
+  :root {
+    /* Light Theme (Professional Slate/Blue) */
+    --bg-page: #f8fafc; /* slate-50 */
+    --bg-surface: #ffffff; /* white */
+    --bg-surface-secondary: #f1f5f9; /* slate-100 */
+    --bg-surface-hover: #f1f5f9; /* slate-100 */
+    --border-subtle: #e2e8f0; /* slate-200 */
+    --border-focus: #93c5fd; /* blue-300 */
+    --text-primary: #0f172a; /* slate-900 */
+    --text-secondary: #475569; /* slate-600 */
+    --text-muted: #94a3b8; /* slate-400 */
+
+    --accent-primary: #2563eb; /* blue-600 */
+    --accent-primary-hover: #1d4ed8; /* blue-700 */
+    --accent-secondary: #0ea5e9; /* sky-500 */
+
+    --success: #10b981; /* emerald-500 */
+    --warning: #f59e0b; /* amber-500 */
+    --danger: #ef4444; /* red-500 */
+  }
+
+  .dark {
+    /* Dark Theme (Deep Space / Satellite) */
+    --bg-page: #020617; /* Very dark navy */
+    --bg-surface: #0f172a; /* Slightly lighter navy */
+    --bg-surface-secondary: #1e293b; /* Secondary surface */
+    --bg-surface-hover: #1e293b;
+    --border-subtle: #1e293b; /* Subtle blue/slate */
+    --border-focus: #3b82f6; /* blue-500 */
+    --text-primary: #f8fafc; /* Bright readable white */
+    --text-secondary: #94a3b8; /* Muted slate/blue-gray */
+    --text-muted: #64748b;
+
+    --accent-primary: #3b82f6; /* Electric blue */
+    --accent-primary-hover: #2563eb;
+    --accent-secondary: #22d3ee; /* Cyan */
+
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.dark {
+  color-scheme: dark;
+}
