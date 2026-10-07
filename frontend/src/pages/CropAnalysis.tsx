@@ -266,7 +266,6 @@ export default function CropAnalysis() {
           </div>{" "}
         </div>{" "}
       </div>{" "}
-      {/* Integration Note */}{" "}
       
     </div>
   );
