@@ -12,3 +12,4 @@ dataset/
 *.zip
 frontend/dist/
 frontend/node_modules/
+sessions/

@@ -212,20 +212,7 @@ export default function Confidence() {
         </button>{" "}
       </div>{" "}
       {/* Integration Note */}{" "}
-      <div className="rounded-xl border border-blue-100 bg-blue-50 p-5">
-        {" "}
-        <p className="text-sm font-medium text-blue-900">
-          {" "}
-          Validation Integration Point{" "}
-        </p>{" "}
-        <p className="mt-1 text-sm leading-6 text-blue-700">
-          {" "}
-          The frontend is connected to the confidence validation API and tracks
-          the current processed GeoTIFF. The AI module can later provide
-          pixel-level confidence, uncertainty, and confidence-map output without
-          changing the page structure.{" "}
-        </p>{" "}
-      </div>{" "}
+      
     </div>
   );
 }

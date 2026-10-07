@@ -1,7 +1,16 @@
+import { withSession } from "./session";
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 async function apiRequest(endpoint: string, options?: RequestInit) {
-  const response = await fetch(`${API_URL}${endpoint}`, options);
+  let response: Response;
+  try {
+    response = await fetch(withSession(`${API_URL}${endpoint}`), options);
+  } catch {
+    throw new Error(
+      "Cannot reach the server. It may be waking up - please wait a minute and try again.",
+    );
+  }
   if (!response.ok) {
     const error = await response.json().catch(() => ({
       detail: "Something went wrong",
@@ -9,6 +18,20 @@ async function apiRequest(endpoint: string, options?: RequestInit) {
     throw new Error(error.detail || "API request failed");
   }
   return response.json();
+}
+
+// Wakes the free Render server (can take up to ~1 minute)
+export async function wakeBackend() {
+  for (let i = 0; i < 15; i++) {
+    try {
+      const response = await fetch(`${API_URL}/health`);
+      if (response.ok) return true;
+    } catch {
+      // server still asleep, try again
+    }
+    await new Promise((resolve) => setTimeout(resolve, 4000));
+  }
+  return false;
 }
 
 export async function checkBackendHealth() {

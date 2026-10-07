@@ -1,38 +1,24 @@
 """
 Super Resolution inference service.
 
-Wires the trained Sentinel2SR checkpoint into the backend. Loads the model
-once (module-level singleton) and exposes `run_super_resolution()`, which
-the /api/processing/super-resolution route calls.
-
---------------------------------------------------------------------------
-KNOWN LIMITATION (flagged by the AI/ML teammate, intentionally NOT fixed
-here per team decision):
-
-`preprocess_raster()` in raster_service.py normalizes each band using
-THAT IMAGE's own min/max (scene-relative 0-1 scaling). Sentinel-2 SR
-models are usually trained on a FIXED reflectance scale (e.g. raw DN /
-10000, clipped to [0,1]) instead. If the checkpoint was trained on fixed
-scaling, feeding it scene-relative-normalized bands will produce
-plausible-looking but scientifically wrong output on real scenes. This
-was called out explicitly in the ML teammate's README ("likely
-scaling/normalization issue... should be fixed before backend
-integration"). The team has decided to wire the pipeline end-to-end
-first and revisit normalization with the ML teammate afterwards - do
-not treat SR output quality as validated until that's confirmed.
---------------------------------------------------------------------------
+NOTE (from the AI teammate): preprocess_raster() normalizes each band using
+that image's own min/max. If the model was trained on a fixed reflectance
+scale (e.g. DN / 10000), output quality is not validated yet.
 """
 
+import os
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import rasterio
-import torch
+from rasterio.windows import Window
 
-from app.ml.model import Sentinel2SR
-
-WEIGHTS_PATH = Path(__file__).resolve().parent.parent / "ml" / "weights" / "sentinel2_sr_inference.pth"
+WEIGHTS_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "ml"
+    / "weights"
+    / "sentinel2_sr_inference.pth"
+)
 
 IN_CHANNELS = 4
 OUT_CHANNELS = 4
@@ -41,13 +27,17 @@ NUM_BLOCKS = 8
 SCALE = 4
 EXPECTED_PARAMS = 927_876
 
-# Tile size for chunked inference (keeps memory bounded on CPU/large scenes).
-# The model is fully convolutional so any tile size works; 256 is a safe
-# default for CPU inference. Increase if you have a GPU with more memory.
-TILE_SIZE = 256
+# Small tiles keep memory low enough for a 512 MB server.
+# TILE_PAD is extra border read around each tile so tile edges blend in.
+TILE_SIZE = 64
+TILE_PAD = 16
 
-_model: Optional[torch.nn.Module] = None
-_device: Optional[torch.device] = None
+# Maximum image size (in pixels) allowed. 0 means no limit.
+# Set MAX_SR_PIXELS on the live server only, so your laptop stays unlimited.
+MAX_PIXELS = int(os.getenv("MAX_SR_PIXELS", "0"))
+
+_model = None
+_device = None
 
 
 class ModelNotAvailableError(Exception):
@@ -55,7 +45,7 @@ class ModelNotAvailableError(Exception):
     pass
 
 
-def load_model() -> torch.nn.Module:
+def load_model():
     """Load (or return cached) Sentinel2SR model with trained weights."""
     global _model, _device
 
@@ -66,9 +56,13 @@ def load_model() -> torch.nn.Module:
         raise ModelNotAvailableError(
             f"Model weights not found at {WEIGHTS_PATH}. "
             "Copy sentinel2_sr_inference.pth into backend/app/ml/weights/ "
-            "(note: the .pth file IS a zip container internally - if you "
-            "were given it as a .zip, just rename it to .pth, don't extract it)."
+            "(the .pth file IS a zip container internally - do not extract it)."
         )
+
+    # Imported here so the server starts fast and upload/preprocess
+    # do not pay the memory cost of torch.
+    import torch
+    from app.ml.model import Sentinel2SR
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -91,9 +85,6 @@ def load_model() -> torch.nn.Module:
 
     params = sum(p.numel() for p in model.parameters())
     if params != EXPECTED_PARAMS:
-        # Not fatal, but almost certainly means architecture drifted from
-        # what was actually trained - surface it loudly instead of
-        # silently serving a mismatched model.
         raise ModelNotAvailableError(
             f"Loaded model has {params:,} parameters, expected "
             f"{EXPECTED_PARAMS:,}. The architecture in app/ml/model.py no "
@@ -105,30 +96,33 @@ def load_model() -> torch.nn.Module:
     return _model
 
 
-def _infer_tile(model: torch.nn.Module, device: torch.device, tile: np.ndarray) -> np.ndarray:
+def _infer_tile(model, device, tile: np.ndarray) -> np.ndarray:
     """Run the model on a single (C, H, W) float32 tile."""
+    import torch
+
     x = torch.from_numpy(tile).unsqueeze(0).to(device)
-    with torch.no_grad():
+    with torch.inference_mode():
         y = model(x)
     return y.squeeze(0).cpu().numpy()
 
 
-def run_super_resolution(input_path: str, output_path: str) -> dict:
+def run_super_resolution(
+    input_path: str,
+    output_path: str,
+    progress_callback=None,
+) -> dict:
     """
-    Run 4x super-resolution on a preprocessed (normalized) GeoTIFF and
-    write the result to output_path as a new GeoTIFF with an updated,
-    correctly-scaled geotransform.
+    Run 4x super-resolution on a preprocessed GeoTIFF and write the result
+    tile by tile. Uses the first 4 bands (B02, B03, B04, B08).
 
-    Assumes the input's first 4 bands are, in order, B02, B03, B04, B08
-    (matching the AI teammate's training setup). If the file has more
-    bands, only the first 4 are used; if fewer than 4, raises ValueError.
+    progress_callback(done_tiles, total_tiles) is called after the model is
+    loaded (with done_tiles = 0) and again after every finished tile.
     """
     model = load_model()
     device = _device
 
     with rasterio.open(input_path) as src:
-        image = src.read().astype(np.float32)  # (bands, H, W)
-        band_count, height, width = image.shape
+        band_count, height, width = src.count, src.height, src.width
 
         if band_count < IN_CHANNELS:
             raise ValueError(
@@ -136,30 +130,24 @@ def run_super_resolution(input_path: str, output_path: str) -> dict:
                 f"{IN_CHANNELS} (B02, B03, B04, B08)."
             )
 
-        image = image[:IN_CHANNELS]
+        if MAX_PIXELS and width * height > MAX_PIXELS:
+            raise ValueError(
+                f"Image is {width}x{height}. The demo server can only process "
+                f"images up to about {MAX_PIXELS:,} pixels. "
+                "Please crop the image and try again."
+            )
 
         out_h, out_w = height * SCALE, width * SCALE
-        output = np.zeros((OUT_CHANNELS, out_h, out_w), dtype=np.float32)
 
-        # Simple non-overlapping grid tiling. Good enough for a working
-        # demo; may show faint seams at tile borders on large scenes since
-        # each tile only sees its own local context. Adding overlap +
-        # blending is a natural next improvement, not required for the
-        # pipeline to function.
-        for y0 in range(0, height, TILE_SIZE):
-            y1 = min(y0 + TILE_SIZE, height)
-            for x0 in range(0, width, TILE_SIZE):
-                x1 = min(x0 + TILE_SIZE, width)
+        # Count the tiles first so we can report progress
+        tiles_x = (width + TILE_SIZE - 1) // TILE_SIZE
+        tiles_y = (height + TILE_SIZE - 1) // TILE_SIZE
+        total_tiles = tiles_x * tiles_y
+        done_tiles = 0
 
-                tile = image[:, y0:y1, x0:x1]
-                sr_tile = _infer_tile(model, device, tile)
+        if progress_callback:
+            progress_callback(0, total_tiles)
 
-                oy0, oy1 = y0 * SCALE, y1 * SCALE
-                ox0, ox1 = x0 * SCALE, x1 * SCALE
-                output[:, oy0:oy1, ox0:ox1] = sr_tile
-
-        # Correctly scale the geotransform so the output GeoTIFF still
-        # lines up spatially (pixel size shrinks by SCALE).
         transform = src.transform * src.transform.scale(
             width / out_w, height / out_h
         )
@@ -172,10 +160,53 @@ def run_super_resolution(input_path: str, output_path: str) -> dict:
             transform=transform,
             dtype=rasterio.float32,
             compress="lzw",
+            tiled=True,
+            blockxsize=256,
+            blockysize=256,
         )
 
         with rasterio.open(output_path, "w", **profile) as dst:
-            dst.write(output)
+            for y0 in range(0, height, TILE_SIZE):
+                y1 = min(y0 + TILE_SIZE, height)
+
+                for x0 in range(0, width, TILE_SIZE):
+                    x1 = min(x0 + TILE_SIZE, width)
+
+                    # Read a slightly bigger area so the tile edges get context
+                    ry0 = max(y0 - TILE_PAD, 0)
+                    ry1 = min(y1 + TILE_PAD, height)
+                    rx0 = max(x0 - TILE_PAD, 0)
+                    rx1 = min(x1 + TILE_PAD, width)
+
+                    tile = src.read(
+                        indexes=list(range(1, IN_CHANNELS + 1)),
+                        window=Window(rx0, ry0, rx1 - rx0, ry1 - ry0),
+                    ).astype(np.float32)
+
+                    sr_tile = _infer_tile(model, device, tile)
+
+                    # Cut the extra border away again
+                    cy0 = (y0 - ry0) * SCALE
+                    cx0 = (x0 - rx0) * SCALE
+                    core = sr_tile[
+                        :,
+                        cy0 : cy0 + (y1 - y0) * SCALE,
+                        cx0 : cx0 + (x1 - x0) * SCALE,
+                    ]
+
+                    dst.write(
+                        core,
+                        window=Window(
+                            x0 * SCALE,
+                            y0 * SCALE,
+                            (x1 - x0) * SCALE,
+                            (y1 - y0) * SCALE,
+                        ),
+                    )
+
+                    done_tiles += 1
+                    if progress_callback:
+                        progress_callback(done_tiles, total_tiles)
 
     return {
         "input_width": width,

@@ -4,6 +4,7 @@ import { setCurrentFile, setProcessedFile } from "../services/projectState";
 import {
   uploadSatelliteImage,
   preprocessSatelliteImage,
+  wakeBackend,
 } from "../services/api";
 interface RasterMetadata {
   width: number;
@@ -55,6 +56,7 @@ export default function Input() {
       setUploading(true);
       setUploadSuccess(false);
       setUploadError("");
+      await wakeBackend();
       const result = await uploadSatelliteImage(file);
       setCurrentFile(file.name);
       setMetadata(result.metadata);
@@ -65,13 +67,24 @@ export default function Input() {
       setUploading(false);
     }
   };
-  const handlePreprocess = async () => {
+    const handlePreprocess = async () => {
     if (!file) return;
     try {
       setPreprocessing(true);
       setPreprocessSuccess(false);
       setPreprocessError("");
-      await preprocessSatelliteImage(file.name);
+      await wakeBackend();
+      try {
+        await preprocessSatelliteImage(file.name);
+      } catch (error) {
+        // The free server forgets files when it restarts: upload again and retry
+        if (error instanceof Error && error.message.includes("File not found")) {
+          await uploadSatelliteImage(file);
+          await preprocessSatelliteImage(file.name);
+        } else {
+          throw error;
+        }
+      }
       setProcessedFile(
         `${file.name.replace(/\.(tif|tiff)$/i, "")}_processed.tif`,
       );
