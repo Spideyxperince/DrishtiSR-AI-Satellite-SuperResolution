@@ -353,21 +353,8 @@ export default function Map() {
           </p>{" "}
         </div>{" "}
       </div>{" "}
-      {/* Integration Note */}{" "}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-        {" "}
-        <h3 className="font-semibold text-blue-900">
-          {" "}
-          GIS Integration Ready{" "}
-        </h3>{" "}
-        <p className="mt-1 text-sm leading-6 text-blue-700">
-          {" "}
-          The frontend layer system is ready for MapLibre, GeoTIFF rendering,
-          GeoJSON features, CRS information, enhanced imagery, confidence maps,
-          NDVI, NDBI, and disaster-analysis layers. Your teammates can connect
-          the real geospatial outputs through the existing GIS API.{" "}
-        </p>{" "}
-      </div>{" "}
+      
+      
     </div>
   );
 }

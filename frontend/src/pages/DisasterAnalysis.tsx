@@ -275,20 +275,7 @@ export default function DisasterAnalysis() {
         </div>{" "}
       </div>{" "}
       {/* Integration Note */}{" "}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-        {" "}
-        <h3 className="font-semibold text-blue-900">
-          {" "}
-          AI / GIS Integration Ready{" "}
-        </h3>{" "}
-        <p className="mt-1 text-sm leading-6 text-blue-700">
-          {" "}
-          This page is already connected to the backend API. Your teammates can
-          later integrate disaster detection, change detection, affected-area
-          calculation, raster comparison, and GIS visualization without changing
-          the frontend structure.{" "}
-        </p>{" "}
-      </div>{" "}
+      
     </div>
   );
 }

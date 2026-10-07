@@ -148,19 +148,7 @@ export default function SpectralValidation() {
         </button>{" "}
       </div>{" "}
       {/* Integration Note */}{" "}
-      <div className="rounded-xl border border-blue-100 bg-blue-50 p-5">
-        {" "}
-        <p className="text-sm font-medium text-blue-900">
-          {" "}
-          Spectral Validation Integration Point{" "}
-        </p>{" "}
-        <p className="mt-1 text-sm leading-6 text-blue-700">
-          {" "}
-          The frontend is connected to the spectral validation API. Once the
-          validation module provides spectral fidelity, SAM, RMSE, and
-          band-level results, they can be displayed here automatically.{" "}
-        </p>{" "}
-      </div>{" "}
+      
     </div>
   );
 }

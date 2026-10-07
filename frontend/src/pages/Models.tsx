@@ -353,21 +353,8 @@ export default function Models() {
           </p>{" "}
         </div>{" "}
       </div>{" "}
-      {/* Integration Note */}{" "}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-        {" "}
-        <h3 className="font-semibold text-blue-900">
-          {" "}
-          Model Integration Ready{" "}
-        </h3>{" "}
-        <p className="mt-1 text-sm leading-6 text-blue-700">
-          {" "}
-          The frontend is connected to the backend model API. Your teammates can
-          register their trained CNN, GAN, transformer, diffusion, or other
-          super-resolution model through the backend without changing this
-          page.{" "}
-        </p>{" "}
-      </div>{" "}
+      
+      
     </div>
   );
 }

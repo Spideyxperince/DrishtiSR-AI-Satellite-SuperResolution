@@ -195,20 +195,7 @@ export default function HallucinationCheck() {
         </button>{" "}
       </div>{" "}
       {/* Integration Note */}{" "}
-      <div className="rounded-xl border border-blue-100 bg-blue-50 p-5">
-        {" "}
-        <p className="text-sm font-medium text-blue-900">
-          {" "}
-          Hallucination Detection Integration Point{" "}
-        </p>{" "}
-        <p className="mt-1 text-sm leading-6 text-blue-700">
-          {" "}
-          The frontend is connected to the hallucination detection API. Once the
-          AI module provides suspicious regions, risk level, trust status, and
-          detection maps, these results can be displayed here
-          automatically.{" "}
-        </p>{" "}
-      </div>{" "}
+      
     </div>
   );
 }

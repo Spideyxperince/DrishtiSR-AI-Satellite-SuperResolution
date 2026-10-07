@@ -377,21 +377,8 @@ export default function Reports() {
           </div>{" "}
         </div>{" "}
       </div>{" "}
-      {/* Integration Note */}{" "}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-        {" "}
-        <h3 className="font-semibold text-blue-900">
-          {" "}
-          Report Integration Ready{" "}
-        </h3>{" "}
-        <p className="mt-1 text-sm leading-6 text-blue-700">
-          {" "}
-          The frontend is connected to both report endpoints. Later, the backend
-          can generate a PDF containing super-resolution results, validation
-          metrics, GIS information, and downstream analysis without requiring
-          changes to this page.{" "}
-        </p>{" "}
-      </div>{" "}
+      
+      
     </div>
   );
 }

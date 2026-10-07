@@ -421,20 +421,7 @@ export default function Settings() {
         </button>{" "}
       </div>{" "}
       {/* Integration Note */}{" "}
-      <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-        {" "}
-        <h3 className="font-semibold text-blue-900">
-          {" "}
-          Integration Ready{" "}
-        </h3>{" "}
-        <p className="mt-1 text-sm leading-6 text-blue-700">
-          {" "}
-          Settings are stored locally and restored automatically. Backend health
-          is checked through the FastAPI health endpoint. Advanced GIS and model
-          configuration can be connected later without changing the application
-          architecture.{" "}
-        </p>{" "}
-      </div>{" "}
+      
     </div>
   );
 }

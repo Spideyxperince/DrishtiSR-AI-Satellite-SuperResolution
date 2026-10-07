@@ -1,0 +1,243 @@
+/* Before / After comparison slider - uses the site's theme variables */
+
+.ba {
+  width: 100%;
+}
+
+.ba__stage {
+  margin: 0 auto;
+  width: 100%;
+}
+
+.ba__frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-secondary);
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: pan-y;
+  outline: none;
+}
+
+.ba__frame:focus-visible {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+.ba__frame--zoomed {
+  cursor: grab;
+  touch-action: none;
+}
+
+.ba__frame--dragging.ba__frame--zoomed {
+  cursor: grabbing;
+}
+
+/* the picture layers move and scale together for zoom and pan */
+.ba__layer {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  transition: transform 0.25s ease;
+  will-change: transform;
+}
+
+.ba__frame--dragging .ba__layer {
+  transition: none;
+}
+
+.ba__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: opacity 0.4s ease;
+}
+
+.ba__pixelated {
+  image-rendering: pixelated;
+}
+
+/* only the left part of the "before" picture is visible */
+.ba__before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.ba__divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 44px;
+  margin-left: -22px;
+  cursor: ew-resize;
+}
+
+.ba__line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 21px;
+  width: 2px;
+  background: #ffffff;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.45);
+}
+
+.ba__handle {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  transform: translateY(-50%);
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #1e293b;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+.ba__label {
+  position: absolute;
+  bottom: 12px;
+  z-index: 2;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+.ba__label span {
+  margin-left: 6px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.ba__label--before {
+  left: 12px;
+}
+
+.ba__label--after {
+  right: 12px;
+}
+
+.ba__loading {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  background: var(--bg-surface-secondary);
+}
+
+.ba__spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent-primary);
+  animation: ba-spin 0.8s linear infinite;
+}
+
+.ba__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ba__hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted, var(--text-secondary));
+}
+
+.ba__tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ba__zoom-value {
+  min-width: 2.5rem;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.ba__button {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ba__button:hover:not(:disabled) {
+  background: var(--bg-surface-secondary);
+  color: var(--text-primary);
+}
+
+.ba__button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ba__button--active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #ffffff;
+}
+
+.ba__button--active:hover:not(:disabled) {
+  background: var(--accent-primary);
+  color: #ffffff;
+}
+
+.ba__error {
+  padding: 40px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+@keyframes ba-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ba__layer,
+  .ba__img {
+    transition: none;
+  }
+  .ba__spinner {
+    animation-duration: 2s;
+  }
+}
